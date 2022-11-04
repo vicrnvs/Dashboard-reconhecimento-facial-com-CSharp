@@ -1,0 +1,471 @@
+using System;
+
+using System.Windows.Forms; namespace Dashboard
+{
+
+public partial class Login : Form
+
+{
+
+public Login()
+
+{
+
+InitializeComponent();
+
+}
+
+private void btn_acessar_Click(object sender, EventArgs e)
+
+{
+
+if (textBox_id.Text == "unip")
+
+{
+
+if (textBox_nome.Text == "adm")
+
+{
+
+if (textBox_cpf.Text=="0") { this.Visible = false;
+Dashboard dashboard = new Dashboard(); dashboard.Show();
+}
+
+else
+
+{
+ 
+
+MessageBox.Show("CPF INCORRETO");
+
+}
+
+}
+
+else
+
+{
+
+MessageBox.Show("NOME NÃO EXISTE");
+
+}
+
+}
+
+else
+
+{
+
+MessageBox.Show("ID INCORRETO");
+
+}
+
+}
+
+}
+
+}
+
+
+
+using System;
+
+using System.Drawing;
+
+using System.Threading.Tasks; using System.Windows.Forms; using System.IO.Ports; namespace Dashboard
+{
+
+public partial class Dashboard : Form
+
+{
+
+string http; string status;
+ 
+
+bool catraca = false; public Dashboard()
+{
+
+InitializeComponent();
+
+}
+
+private void atualizar_com()
+
+{
+
+int i;
+
+bool quant; i = 0;
+quant = false;
+
+if (select_comunicacaoSerial.Items.Count == SerialPort.GetPortNames().Length)
+
+{
+
+foreach (string s in SerialPort.GetPortNames())
+
+{
+
+if (select_comunicacaoSerial.Items[i++].Equals(s) == false)
+
+{
+
+quant = true;
+
+}
+
+}
+
+}
+
+else
+
+{
+
+quant = true;
+
+}
+
+if (quant == false)
+
+{
+ 
+
+return;
+
+}
+
+select_comunicacaoSerial.Items.Clear(); foreach (string s in SerialPort.GetPortNames())
+{
+
+select_comunicacaoSerial.Items.Add(s);
+
+}
+
+select_comunicacaoSerial.SelectedIndex = 0;
+
+}
+
+private void btn_conectar_Click(object sender, EventArgs e)
+
+{
+
+try
+
+{
+
+if (btn_conectar.Text == "CONECTAR")
+
+{
+
+serialPort1.PortName	=
+select_comunicacaoSerial.Items[select_comunicacaoSerial.SelectedIndex].ToStri ng();
+
+serialPort1.Open(); status_comunicacaoSerial.Text = "ONLINE";
+status_comunicacaoSerial.ForeColor = Color.Green; btn_conectar.Text = "DESCONECTAR"; btn_conectar.BackColor = Color.Red; btn_conectar.ForeColor = Color.White; Task.Delay(30000);
+buscaIp.Enabled = true;
+
+}
+
+else if (btn_conectar.Text == "DESCONECTAR")
+ 
+
+{
+
+serialPort1.Close(); status_comunicacaoSerial.Text = "OFFLINE"; status_comunicacaoSerial.ForeColor = Color.Red; btn_conectar.Text = "CONECTAR"; btn_conectar.BackColor = Color.SpringGreen; btn_conectar.ForeColor = Color.Black;
+IP.Text = "000.000.00.00";
+
+buscaIp.Enabled = false;
+
+}
+
+}
+
+catch
+
+{
+
+status_comunicacaoSerial.Text = "ERROR"; status_comunicacaoSerial.ForeColor = Color.Red;
+IP.Text = "Não foi possivel conectar nesta PORT tente outra"; Task.Delay(10000);
+status_comunicacaoSerial.Text = "OFFLINE"; serialPort1.Close();
+IP.Text = "000.000.00.00";
+
+buscaIp.Enabled = false;
+
+}
+
+}
+
+private void timerCheckSerial_Tick(object sender, EventArgs e)
+
+{
+
+if (!serialPort1.IsOpen)
+
+{
+ 
+
+atualizar_com();
+
+}
+
+if (serialPort1.IsOpen && catraca )
+
+{
+
+status = serialPort1.ReadLine(); status_catraca.Text = ""; status_catraca.Text = status;
+}
+
+}
+
+private void linkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+
+{
+
+WEB("http://"+IP.Text);
+
+}
+
+private void WEB(string link)
+
+{
+
+System.Diagnostics.Process.Start(link);
+
+}
+
+public void BuscaIP()
+
+{
+
+int i = 0; while (i < 10)
+{
+
+serialPort1.Write("rede");
+
+http = serialPort1.ReadExisting();
+
+
+
+if (http == "CLOSED")
+
+{
+ 
+
+i = 0;
+
+}
+
+else
+
+{
+
+string tratamento = http.Replace("CLOSED", ""); IP.Text = tratamento;
+if (IP.Text.Length > 4)
+
+{
+
+linkLabel.Visible = true; buscaIp.Enabled = false; btnStatus.Visible = true; btnStatus.Enabled = true; btn_novoCadastro.Enabled = true; i = 11;
+} i++;
+}
+
+}
+
+}
+
+private void BuscarIP_Click(object sender, EventArgs e)
+
+{
+
+BuscaIP();
+
+}
+
+private void btnStatus_Click(object sender, EventArgs e)
+
+{
+
+catraca = true;
+
+}
+ 
+
+private void btn_login_Click(object sender, EventArgs e)
+
+{
+
+this.Visible = false;
+
+Login login = new Login(); login.Show();
+}
+
+private void btn_novoCadastro_Click(object sender, EventArgs e)
+
+{
+
+Cadastro_acesso cadastro = new Cadastro_acesso(); cadastro.Show();
+}
+
+}
+
+}
+
+
+
+using System; using System.Data;
+using System.Threading.Tasks; using System.Windows.Forms; using MySql.Data.MySqlClient;
+
+
+namespace Dashboard
+
+{
+
+public partial class Cadastro_acesso : Form
+
+{
+
+bool atualizar = false; MySqlConnection Conexao; public Cadastro_acesso()
+ 
+
+{
+
+InitializeComponent();
+
+}
+
+private void btn_registrar_Click(object sender, EventArgs e)
+
+{
+
+if (atualizar)
+
+{
+
+try {
+
+string data = "datasource=localhost; username=root;
+password=; database=db_user";
+Conexao = new MySqlConnection(data);
+
+string sql = "update usuario set nome = ? ,rg = ? , cpf = ? where id = ?"; MySqlCommand comando = new MySqlCommand(sql, Conexao);
+Conexao.Open();	
+comando.Parameters.Clear();	
+comando.Parameters.Add("@nome", textBoxNome.Text;	MySqlDbType.VarChar,150).Value	=
+comando.Parameters.Add("@rg", textBox_RG.Text;	MySqlDbType.VarChar,9).Value	=
+comando.Parameters.Add("@cpf", textBox_CPF.Text;	MySqlDbType.VarChar,11).Value	=
+comando.Parameters.Add("@id", textBoxID.Text;	MySqlDbType.VarChar,50).Value	=
+
+comando.CommandType = CommandType.Text; comando.ExecuteNonQuery(); msgSalvo.Visible = true;
+msgSalvo.Text = "Atualizado com sucesso!";
+ 
+
+}
+
+catch (Exception err)
+
+{
+
+msgSalvo.Visible = true; msgSalvo.Text = "Erro: " + err;
+}
+
+finally
+
+{
+
+textBoxID.Text = ""; textBoxNome.Text = ""; textBox_RG.Text = ""; textBox_CPF.Text = ""; Task.Delay(20000); msgSalvo.Text = ""; msgSalvo.Visible = false;
+}
+
+}
+
+else
+
+{
+
+try
+
+{
+
+string data = "datasource=localhost; username=root;
+password=; database=db_user";
+Conexao = new MySqlConnection(data);
+
+string sql = "INSERT INTO usuario (id, nome, rg, cpf) VALUES ('" + textBoxID.Text
++ "','" + textBoxNome.Text + "','" + textBox_RG.Text + "','" + textBox_CPF.Text + "')";
+ 
+
+MySqlCommand comando = new MySqlCommand(sql, Conexao); Conexao.Open();
+comando.ExecuteReader(); msgSalvo.Visible = true;
+msgSalvo.Text = "Salvo com sucesso!";
+
+}
+
+catch (Exception err)
+
+{
+
+msgSalvo.Text = "Erro: " + err;
+
+}
+
+finally
+
+{
+
+Conexao.Close(); textBoxID.Text = ""; textBoxNome.Text = ""; textBox_RG.Text = ""; textBox_CPF.Text = ""; Task.Delay(20000); msgSalvo.Text = ""; msgSalvo.Visible = false;
+}
+
+}
+
+}
+
+private void btn_buscar_Click(object sender, EventArgs e)
+
+{
+
+try
+
+{
+ 
+
+string data = "datasource=localhost; username=root;
+password=; database=db_user";
+Conexao = new MySqlConnection(data);
+
+string sql = "select nome, rg, cpf from usuario where id = ?"; MySqlCommand comando = new MySqlCommand(sql, Conexao); comando.Parameters.Clear();
+comando.Parameters.Add("@id",	MySqlDbType.VarChar,50).Value	= textBoxID.Text;
+
+comando.CommandType = CommandType.Text; Conexao.Open();
+MySqlDataReader leitura;
+
+leitura = comando.ExecuteReader(); leitura.Read();
+textBoxNome.Text = leitura.GetString(0); textBox_RG.Text = leitura.GetString(1); textBox_CPF.Text = leitura.GetString(2); atualizar = true;
+}
+
+catch (Exception err)
+
+{
+
+msgSalvo.Visible = true; msgSalvo.Text = "Erro: " + err; Task.Delay(20000); msgSalvo.Text = ""; msgSalvo.Visible = false;
+}
+ 
+
+finally
+
+{
+
+Conexao.Close();
+
+}
+
+}
+
+private void btn_cancelar_Click(object sender, EventArgs e)
+
+{
+
+atualizar = false; this.Close();
+}
+
+}
+
+}
